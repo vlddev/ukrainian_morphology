@@ -1,0 +1,16 @@
+<!doctype html>
+<html>
+    <head>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <link rel="stylesheet" href="/static/index.css">
+    </head>
+    <body>
+        <div class="container">
+            {% if err_msg %}
+            <div class="errorMessage">
+                <p>{{ err_msg }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </body>
+</html>

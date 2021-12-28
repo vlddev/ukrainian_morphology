@@ -1,0 +1,66 @@
+<!doctype html>
+<html style="height: 100%;">
+    <head>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <link rel="stylesheet" href="/static/index.css">
+    </head>
+    <style>
+        .reslist {
+            margin: 10px;
+            border-radius:5px; 
+            padding:5px; 
+            background-color:lightgray; 
+            box-shadow: 5px 5px darkgray; 
+            font-size: 20px;
+        }
+    </style>
+    <body style="height: 100%;">
+        <div class="header" style="text-align: center;">
+            <h1>Ukrainian morphology</h1>
+        </div>
+        <table style="width: 100%; height: 100%; margin-left:10px;">
+          <tr>
+            <td style="width: 20%; vertical-align:top;">
+                <div class="leftList">
+                    <div class="reslist">
+                        <form method="POST" enctype="multipart/form-data">
+                            <label for="word">word:</label>
+                            {% if query_content %}
+                            <input type="text" id="word" name="word" value="{{ query_content }}" style="border-radius:4px;">
+                            {% else %}
+                            <input type="text" id="word" name="word" style="border-radius:4px;">
+                            {% endif %}
+                            <input type="submit" value="Search">
+                        </form>
+                    </div>
+                    {% if err_msg %}
+                    <div class="errorMessage">
+                        <p>{{ err_msg }}</p>
+                    </div>
+                    {% endif %}
+                    {% if resultList %}
+                        {% for row in resultList %}
+                        <div class="reslist">
+                            <a href="flex?wordId={{row.nom_old}}" target="flexFrame">{{row.inf}}, {{row.part}}</a>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </td>
+            <td style="width: 80%; height: 100%; vertical-align:top;">
+                {% if resultList %}
+                <iframe src="flex?wordId={{resultList[0].nom_old}}" name="flexFrame" frameborder="0"
+                    style="overflow:hidden; height:100%; width:100%; border:none;" >
+                </iframe>
+                {% else %}
+                <iframe name="flexFrame" frameborder="0"
+                    style="overflow:hidden; height:100%; width:100%; border:none;" >
+                </iframe>
+                {% endif %}
+            </td>
+          </tr>
+        </table>
+    </body>
+</html>
+
+

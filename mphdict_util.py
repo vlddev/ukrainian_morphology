@@ -81,6 +81,25 @@ def getWordBase(con, nom_old):
     word.inf = word.reestr.replace('"','')
   return word
 
+def findWordBases(con, word):
+  cur = con.cursor()
+  cur.execute("select reestr, part, type, accent, nom_old from nom where replace(reestr,'\"','') = ?", (word,))
+  words = []
+  data = cur.fetchall()
+  if len(data) == 1 and data[0][0] == 'empty_':
+    return words
+  else:
+    for row in data:
+      w = WordBase()
+      w.reestr = row[0]
+      w.part = row[1]
+      w.type = row[2]
+      w.accent = row[3]
+      w.nom_old = row[4]
+      w.inf = w.reestr.replace('"','')
+      words.append(w)
+  return words
+
 def getIndent(con, type):
   ret = None
   cur = con.cursor()
@@ -140,7 +159,7 @@ def isAccentCorrect(word):
   ret = (accentPos > 0 and word[accentPos-1].lower() in GOLOSNI)
   return ret
 
-def getWordforms(con, word, debug=False):
+def getWordforms(con, word, debug=False, groupFlex=False):
   ret = {}
   accentErrors = False
   indent = getIndent(con, word.type)
@@ -195,11 +214,18 @@ def getWordforms(con, word, debug=False):
                 accentErrors = True
                 if debug: print("Wrong accent {}".format(wf[:accentPos] + '"' + wf[accentPos:]))
                 if debug: print("   fid={} (gram={}), flexVariant={}. indents={}".format(fid, accentFlexNr, flexVariant, indents))
-          wf = wf.replace('*','').replace('@','').replace('$','').replace('^','')
+          wf = wf.replace('*','').replace('@','').replace('$','').replace('^','').replace('%','')
           if debug: print("  flexes: {} - {} ({}), accent {}".format(fid, ending, wf, accentPos))
           if flexVariant > 0:
-            key = "{}_{}".format(fid, flexVariant)
-            ret[key] = wf
+            if groupFlex:
+              val = ret[fid]
+              if isinstance(val, list):
+                ret[fid].append(wf)
+              else:
+                ret[fid] = [val, wf]
+            else:
+              key = "{}_{}".format(fid, flexVariant)
+              ret[key] = wf
           else:
             ret[fid] = wf
     else:
@@ -207,73 +233,6 @@ def getWordforms(con, word, debug=False):
   else:
     print('No indent for '+word.reestr)
   return ret, accentErrors
-
-def getWordformsOld(con, word, debug=False):
-  ret = {}
-  indent = getIndent(con, word.type)
-  if debug: print("indent: ", indent)
-  if indent != None:
-    flexes = getFlexes(con, word.type)
-    accents = getAccents(con, word.accent)
-    if debug: print("accent.id: ", word.accent)
-    if debug: print("type: ", word.type)
-    baseAccentPos =  word.reestr.find('"')
-    # TODO get first vowel (warning if more then one vowels in word)
-    if baseAccentPos < 0:
-      baseAccentPos = getFirstVowelPos(word.reestr)
-      vowelCount = getVowelCount(word.reestr)
-      if vowelCount > 1:
-        print("Word {} with {} vowels has not accent.]: ", word.reestr, vowelCount)
-    if baseAccentPos < 0: baseAccentPos = 1
-    if debug: print("baseAccentPos: ", baseAccentPos)
-    wordBase = word.reestr.replace('"','')
-    if debug: print("wordBase: ", wordBase)
-    if len(flexes) > 0:
-      prevFlexNr = -1
-      flexVariant = 0
-      for row in flexes:
-        if indent == 0:
-          wf = wordBase+str(row[0] or '')
-        else:
-          wf = wordBase[:-indent]+str(row[0] or '')
-        accentPos = baseAccentPos
-        if (prevFlexNr == row[1]):
-          flexVariant += 1
-        else:
-          flexVariant = 0
-        accentFlexNr = convertAccentIndex(row[1])
-        if flexVariant > 0: accentFlexNr = "{}_{}".format(accentFlexNr, flexVariant)
-        if accentFlexNr in accents:
-          if accents[accentFlexNr][0] is not None:
-            accentPos += accents[accentFlexNr][0]
-          else:
-            print('Accent None for {}, {}, flex {}'.format(wordBase, word.nom_old, row[1]))
-        if accentPos > len(wf):
-          if getVowelCount(wf) == 1:
-            print("accentPos={} > len(wf) for wf: {}. Use first vowel.".format(accentPos, wf))
-            accentPos = getFirstVowelPos(wf)
-            wf = wf[:accentPos] + '"' + wf[accentPos:]
-        else:
-          if wf[accentPos-1].lower() in GOLOSNI:
-            wf = wf[:accentPos] + '"' + wf[accentPos:]
-          else:
-            print("Wrong accent {}".format(wf[:accentPos] + '"' + wf[accentPos:]))
-            if getVowelCount(wf) == 1:
-              accentPos = getFirstVowelPos(wf)
-              wf = wf[:accentPos] + '"' + wf[accentPos:]
-        wf = wf.replace('*','').replace('@','').replace('$','').replace('^','')
-        if debug: print("  flexes: {} - {} ({}), accent {}".format(row[1], row[0], wf, accentPos))
-        if row[1] in ret:
-          key = genNextFreeKey(ret, row[1])
-          ret[key] = wf
-        else:
-          ret[row[1]] = wf
-        prevFlexNr = row[1]
-    else:
-      ret[1]=wordBase
-  else:
-    print('No indent for '+word.reestr)
-  return ret
 
 def genNextFreeKey(dictVar, key):
   i = 1
@@ -324,11 +283,47 @@ def writeWord(con, word, wfDict):
     cur.execute(sqlWf, (word.nom_old, wf, fid, accent))
   # con.commit()
 
+def formatWordAsTable(con, wordId):
+  ret = []
+  word = getWordBase(con, wordId)
+  wfDict, errors = getWordforms(con, word, True, True)
+  if word.part in [5,6,7,8,13]:
+    ret = formatNounTable(wfDict)
+  elif word.part in [11,16]:
+    ret = formatAdjTable(wfDict)
+  else:
+    for key, value in wfDict.items():
+      ret.append([key, value])
+  return ret
+
+def formatNounTable(wfDict):
+  ret = [
+    ["Відмінок","Однина","Множина"],
+    ["Наз.", wfDict[1], wfDict[8]],
+    ["Род.", wfDict[2], wfDict[9]],
+    ["Дав.", wfDict[3], wfDict[10]],
+    ["Знах.", wfDict[4], wfDict[11]],
+    ["Оруд.", wfDict[5], wfDict[12]],
+    ["Місц.", wfDict[6], wfDict[13]],
+    ["Клич.", wfDict[7], wfDict[14]]]
+  return ret
+
+def formatAdjTable(wfDict):
+  ret = [
+    ["Відмінок","Чол.рід","Жін.рід","Сер.рід","Множина"],
+    ["Наз.", wfDict[1], wfDict[7], wfDict[13], wfDict[19]],
+    ["Род.", wfDict[2], wfDict[8], wfDict[14], wfDict[20]],
+    ["Дав.", wfDict[3], wfDict[9], wfDict[15], wfDict[21]],
+    ["Знах.", wfDict[4], wfDict[10], wfDict[16], wfDict[22]],
+    ["Оруд.", wfDict[5], wfDict[11], wfDict[17], wfDict[23]],
+    ["Місц.", wfDict[6], wfDict[12], wfDict[18], wfDict[24]]]
+  return ret
+
 try:
   con = lite.connect(MPH_DICT_DB)
   conOut = lite.connect(OUT_DICT_DB)
   word = getWordBase(con, 78188)
-  wfDict = getWordforms(con, word, True)
+  wfDict = getWordforms(con, word, True, True)
   print(wfDict)
   # print(getVowelPos("гра"))
   # print(getAccents(con, word.accent))

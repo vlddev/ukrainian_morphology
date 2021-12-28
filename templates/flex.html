@@ -1,0 +1,24 @@
+<!doctype html>
+<html style="height: 100%;">
+    <head>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <link rel="stylesheet" href="/static/index.css">
+    </head>
+    <body style="height: 100%;">
+        <div class="container" style="height: 100%;">
+            {% if flexList %}
+            <table style="border: 1px solid; border-radius: 25px;">
+                {% for row in flexList %}
+                <tr class="resultRow" style="border: 1px solid;">
+                    {% for elem in row %}
+                    <td style="border: 1px solid; padding:5px">
+                        <p>{{ elem }}</p>
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </table>
+            {% endif %}
+        </div>
+    </body>
+</html>
