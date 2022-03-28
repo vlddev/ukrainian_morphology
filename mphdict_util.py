@@ -283,6 +283,35 @@ def writeWord(con, word, wfDict):
     cur.execute(sqlWf, (word.nom_old, wf, fid, accent))
   # con.commit()
 
+def create_table(conn, create_table_sql):
+  """ create a table from the create_table_sql statement
+  :param conn: Connection object
+  :param create_table_sql: a CREATE TABLE statement
+  :return:
+  """
+  try:
+    c = conn.cursor()
+    c.execute(create_table_sql)
+  except lite.Error as e:
+    print(e)
+
+def createOutTables(con):
+  sql_create_inf = """ CREATE TABLE IF NOT EXISTS inf (
+                                      id integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+                                      type integer NOT NULL DEFAULT '0',
+                                      inf TEXT NOT NULL COLLATE BINARY
+                                  ); """
+  sql_create_wf = """ CREATE TABLE IF NOT EXISTS wf (
+                                      id integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+                                      fk_inf integer NOT NULL DEFAULT '0',
+                                      wf TEXT NOT NULL COLLATE BINARY,
+                                      accent TEXT NOT NULL COLLATE BINARY,
+                                      fid	TEXT DEFAULT ''
+                                  ); """
+  create_table(con, sql_create_inf)
+  create_table(con, sql_create_wf)
+
+
 def formatWordAsTable(con, wordId):
   ret = []
   word = getWordBase(con, wordId)

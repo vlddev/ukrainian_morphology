@@ -54,6 +54,7 @@ def convert_db():
   try:
     con = lite.connect(MPH_DICT_DB)
     conOut = lite.connect(OUT_DICT_DB)
+    mphdict_util.createOutTables(conOut)
     mphdict_util.processAllWords(con, conOut)
   finally:
     if con:
