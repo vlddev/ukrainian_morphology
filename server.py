@@ -4,18 +4,10 @@ from flask import Flask, request, render_template, flash, redirect
 import sqlite3 as lite
 import mphdict_util
 
-# UPLOAD_FOLDER = 'static/uploaded/'
-UPLOAD_FOLDER = '/tmp/'
 MPH_DICT_DB = 'mph_ua.db'
 OUT_DICT_DB = 'out_dict_ua.db'
 
-# work_matcher_api = os.getenv('WORK_MATCHER_API', 'http://localhost:5001')
-# print("WORK_MATCHER: "+work_matcher_api)
-# WORK_MATCHER_URL = work_matcher_api+"/search?title={title}&artist={artist}"
-
 app = Flask(__name__)
-#app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -24,11 +16,7 @@ def index():
     word = request.form['word']
     query_content = "{}".format(word)
     con = lite.connect(MPH_DICT_DB)
-    # resultList = mphdict_util.formatWordAsTable(con, wordId)
     resultList = mphdict_util.findWordBases(con, word)
-    #firstWordId = None
-    #if len(resultList) > 0:
-    #  firstWordId = 
     if con:
       con.close()
 
