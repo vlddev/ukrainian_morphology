@@ -308,8 +308,15 @@ def createOutTables(con):
                                       accent TEXT NOT NULL COLLATE BINARY,
                                       fid	TEXT DEFAULT ''
                                   ); """
+  sql_create_fidmap = """ CREATE TABLE IF NOT EXISTS fidmap (
+                                      fid	TEXT NOT NULL,
+                                      udfid	TEXT NOT NULL
+                                  ); """
+  sql_create_ind = " CREATE UNIQUE INDEX ind_fidmap_uniq ON fidmap (fid, udfid); "
   create_table(con, sql_create_inf)
   create_table(con, sql_create_wf)
+  create_table(con, sql_create_fidmap)
+  create_table(con, sql_create_ind)
 
 
 def formatWordAsTable(con, wordId):
