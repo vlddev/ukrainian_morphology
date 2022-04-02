@@ -316,7 +316,7 @@ def formatWordAsTable(con, wordId):
   ret = []
   word = getWordBase(con, wordId)
   wfDict, errors = getWordforms(con, word, True, True)
-  if word.part in [5,6,7,8,13]:
+  if word.part in [5,6,7,8,13,21,22,23,24,32,33,34,38,39,40,41,55]:  #14,27
     ret = formatNounTable(wfDict)
   elif word.part in [11,16]:
     ret = formatAdjTable(wfDict)
