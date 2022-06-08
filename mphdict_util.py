@@ -230,6 +230,8 @@ def getWordforms(con, word, debug=False, groupFlex=False):
             ret[fid] = wf
     else:
       ret[1]=wordBase
+      if baseAccentPos < len(wordBase) and word.part in [71]:
+        ret[1] = wordBase[:baseAccentPos] + '"' + wordBase[baseAccentPos:]
   else:
     print('No indent for '+word.reestr)
   return ret, accentErrors
@@ -335,13 +337,13 @@ def formatWordAsTable(con, wordId):
 def formatNounTable(wfDict):
   ret = [
     ["Відмінок","Однина","Множина"],
-    ["Наз.", wfDict[1], wfDict[8]],
-    ["Род.", wfDict[2], wfDict[9]],
-    ["Дав.", wfDict[3], wfDict[10]],
-    ["Знах.", wfDict[4], wfDict[11]],
-    ["Оруд.", wfDict[5], wfDict[12]],
-    ["Місц.", wfDict[6], wfDict[13]],
-    ["Клич.", wfDict[7], wfDict[14]]]
+    ["Наз.", wfDict.get(1, '-'), wfDict.get(8, '-')],
+    ["Род.", wfDict.get(2, '-'), wfDict.get(9, '-')],
+    ["Дав.", wfDict.get(3, '-'), wfDict.get(10, '-')],
+    ["Знах.", wfDict.get(4, '-'), wfDict.get(11, '-')],
+    ["Оруд.", wfDict.get(5, '-'), wfDict.get(12, '-')],
+    ["Місц.", wfDict.get(6, '-'), wfDict.get(13, '-')],
+    ["Клич.", wfDict.get(7, '-'), wfDict.get(14, '-')]]
   return ret
 
 def formatAdjTable(wfDict):
@@ -358,7 +360,7 @@ def formatAdjTable(wfDict):
 try:
   con = lite.connect(MPH_DICT_DB)
   conOut = lite.connect(OUT_DICT_DB)
-  word = getWordBase(con, 78188)
+  word = getWordBase(con, 10201)
   wfDict = getWordforms(con, word, True, True)
   print(wfDict)
   # print(getVowelPos("гра"))
